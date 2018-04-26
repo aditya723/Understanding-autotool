@@ -1,0 +1,112 @@
+GNU Build System
+******************
+In the Unix world, build  system  is  traditionally  achieved  using  the  command make.You express the recipe to build
+your  package  in  a Makefile.Each time make is run,  it reads Makefile,  checks the existence and modification time of
+the files mentioned, decides what files need to be built (or rebuilt), and runs the associated commands.
+
+When a package needs to be built on a different platform than the one it was developed on, its Makefile usually needs to be
+adjusted.  For instance the compiler may have another name  or  require  more  options.   In  1991,  David  J.  MacKenzie  got
+tired  of  customizing Makefile for the 20 platforms he had to deal with.  Instead, he handcrafted a little shell script  called
+configure to  automatically  adjust  the Makefile Compiling his package was now as simple as running ./configure && make.
+
+The Autotools are tools that will create a GNU Build System for your package. Autoconf mostly focuses on configure and Automake
+on Makefiles.  It is entirely possible to create a GNU Build System without the help of these tools.
+
+make
+make install
+make installcheck
+make check
+
+Standard Makefile Targets
+---------------------------
+make all            Build programs, libraries, documentation, etc. (same as make).
+make install        Install what needs to be installed, copying the files from the package’s tree to system-wide directories.
+make install-strip  Same as make install , then strip debugging symbols.  Some users like to trade space for useful bug reports.
+make uninstall      The opposite of make install  erase the installed files.
+make clean          Erase from the build tree the files built by make all.
+make distclean      Additionally erase anything ./configure created.
+make check          Run the test suite, if any.
+make installcheck   Check the installed programs or libraries, if supported.
+make dist           Recreate package-version.tar.gz from all the source files.
+
+
+Standard Directory Variables
+-----------------------------
+Directory variable
+Default             value
+prefix              /usr/local
+exec_prefix          ${prefix} -------------> used for architecture specific file
+bindir              ${exec_prefix}/bin
+.......
+
+bindir is a directory where binaries will be installed.The  default value for this directory is /usr/local/bin , but the user
+can supply a different value when calling configure.
+
+
+ Standard Configuration Variables
+ ----------------------------------
+ CC         C   compiler command
+ CFLAGS     C   compiler flags
+ CXX        C++ compiler command
+ CXXFLAGS   C++  compiler flags
+ LDFLAGS    linker flags
+ CPPFLAGS   C/C++ preprocessor flags
+ 
+ configure usually does a good job at setting appropriate values for these variables, but there are cases where you may want
+ to override them.  For instance you may have several versions of a compiler installed and would like to use another one, 
+ you may have header files installed outside the default search path of the compiler, or even libraries out of the way of the
+ linker.
+ 
+ Here is how one would call configure  to force it to use gcc-3 as C compiler, use header files from ~/usr/include when
+ compiling, and libraries from ~/usr/lib when linking.
+aditya]$ ./configure --prefix ~/usr CC=gcc-3 CPPFLAGS=-I$HOME/usr/include LDFLAGS=-L$HOME/usr/lib
+
+
+Cross-Compilation
+-------------------
+To cross-compile is to build on one platform a binary that will run on another platform.
+--build=build    The system on which the package is built.
+--host=host      The system where built programs and libraries will run.
+--target=target  When building compiler tools: the system for which the tools will create output.
+
+For instance when installing GCC, the GNU Compiler Collection, we can use --target=target to  specify  that
+we  want  to  build  GCC  as  a  cross-compiler  for target .   Mixing --build and --target , we can actually
+cross-compile a cross-compiler; such a three-way cross-compilation is known as a Canadian cross.
+
+
+ Parallel Build Trees (a.k.a. VPATH Builds --- > source and build tree are different)
+ ----------------------------------------------
+ The GNU Build System distinguishes two trees: the source tree, and the build tree.
+ 
+ The  source  tree  is  rooted  in  the  directory  containing configure.   It  contains  all  the
+sources files (those that are distributed), and may be arranged using several subdirectories.
+
+The build tree is rooted in the directory in which configure was run, and is populated
+with all object files, programs, libraries, and other derived files built from the sources (and
+hence  not  distributed).   The  build  tree  usually  has  the  same  subdirectory  layout  as  the
+source tree; its subdirectories are created automatically by the build system.
+
+If configure is executed in its own directory, the source and build trees are combined:
+derived files are constructed in the same directories as their sources.
+
+Two-Part Installation
+----------------------
+The  GNU  Build  System  also  supports  networked  setups  where  part  of  the  installed
+files should be shared amongst multiple hosts.  It does so by distinguishing architecture-
+dependent files from architecture-independent files, and providing two Makefile targets to
+install each of these classes of files.
+
+install-exec for architecture-dependent files.
+install-data for architecture-independent file.
+
+all  the variables  based  on exec-prefix designate  architecture-dependent  directories  whose  files will 
+be  installed  by make install-exec.
+
+Renaming Programs at Install Time
+-----------------------------------
+The  GNU  Build  System  provides  means  to  automatically  rename  executables  and  man-pages before they are installed.
+This can be done using one of these three configure options.
+
+--program-prefix=prefix                 Prepend prefix to installed program names.
+--program-suffix=suffix                 Append suffix to installed program names.
+--program-transform-name=program        Run sed program on installed program names.
